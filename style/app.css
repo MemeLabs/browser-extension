@@ -1,0 +1,74 @@
+/* Extension */
+body {
+  width: 450px;
+  height: 225px;
+  background: #121212;
+}
+
+/* Extension Header */
+h2.strims {
+  color: #e45e07;
+  padding-left: 15px;
+}
+
+/* Extension divider */
+.page-header {
+  border-bottom-color: #D17134;
+}
+
+a {
+  text-decoration: none !important;
+  color: #121212 !important;
+  -webkit-box-shadow: none !important;
+  box-shadow: none !important;
+  user-select: none;
+  outline: none !important;
+}
+
+/* Strim section */
+.live {
+  width: 450px;
+  height: 220px;
+  background: #121212;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Strim Row/Card */
+img.thumbnail {
+  width:100%;
+  background-color: #121212;
+  border-color: #D17134;
+}
+.title {
+  font-weight: bold;
+  color: #e45d07;
+}
+.channel {
+  font-style: italic;
+  font-weight: 500;
+  color: #e45d07;
+}
+.viewers {
+  color: #e45d07;
+}
+button.copy{
+  background-color: #121212;
+  border-color: #121212;
+  padding-left: 10px;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  outline: none !important;
+}
+img.copy {
+  background-color: #121212;
+  height: 15px;
+}
+/* #D17134 - orange */
+/* #121212 - black */

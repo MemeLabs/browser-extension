@@ -1,0 +1,16 @@
+Strims GG extension for displaying a user's favorite channels, what's currently live, and enable quick access to open up live streams on the Strims.gg site.
+Strims GG is a browser extension for Google Chrome that makes it easy to check which of your favorite Strims.gg channels are currently live.
+
+Extension developed by strims community members including: NomDePlume.
+
+Once the extension has been installed it will place a small monitor / TV icon on the top right of your browser window.
+This icon will show a badge to indicate the number of streams which are currently live.
+Upon opening you will see the list of streams available to watch, their viewer counts, who is streaming and the title of their stream.
+
+You can then view which of your favorite Strims.gg streams are online by clicking the Strims GG icon in the browser window.
+
+This extension does not stream or show any content itself, it is purely a mechanism that uses developer approved api's to create a link listing of what is available on the site to view.
+
+Future Releases:
+- Configure the extension to send you a notification when one of your favorite streams goes online.
+- See the strims calendar to make sure you don't miss upcoming events

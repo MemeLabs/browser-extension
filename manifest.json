@@ -1,0 +1,31 @@
+{
+  "manifest_version": 2,
+  "name": "Strims Live",
+  "short_name": "StrimsTV",
+  "description": "Strims extension for displaying a user's favorite channels, what's live, and quick navigation to live streams on Strims.gg.",
+  "version": "0.0.1",
+  "background": {
+    "scripts": [
+      "js/libs/jquery-3.4.1.min.js",
+      "js/objects/Background.js",
+      "js/objects/Strims.js",
+      "js/objects/App.js",
+      "js/background.js"
+    ],
+    "persistent": false
+  },
+  "icons": {
+    "128": "images/icon.png"
+  },
+  "browser_action": {
+    "default_title" : "Strims",
+    "default_popup": "html/app.html",
+     "default_icon": {
+       "128": "images/icon.png"
+     }
+  },
+  "permissions": ["declarativeContent",
+    "notifications",
+    "storage",
+    "*://*.strims.gg/*"]
+}

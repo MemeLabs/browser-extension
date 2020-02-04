@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="../js/libs/jquery-3.4.1.min.js"></script>
+  <script src="../js/libs/bootstrap.min.js"></script>
+  <script src="../js/libs/popper.min.js"></script>
+  <script src="../js/libs/clipboard.min.js"></script>
+  <script src="../js/objects/App.js"></script>
+  <link type="text/css" rel="stylesheet" media="all" href="../style/bootstrap.min.css">
+  <link type="text/css" rel="stylesheet" media="all" href="../style/app.css">
+  <script type="text/html" data-template="liveChannel">
+      <div class="container container-fluid" data-name="{channel}">
+        <div class="row">
+          <a href="{url}" target="_blank">
+            <div class="col-xs-7">
+              <img class="thumbnail" src="{thumbnail}">
+            </div>
+          </a>
+          <div class="col-xs-5">
+            <div class="row">
+              <div class="col-xs-11">
+                <h5 class="title">{title}</h5>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-11 channel">By {channel}</div>
+            </div>
+            <div class="row">
+              <div class="col-xs-11 viewers">Viewers: {viewers}</div>
+            </div>
+            <div class="row">
+              <button class="btn copy"
+                data-placement="bottom"
+                data-clipboard-text="{url}">
+                <img class="copy" src="/images/copy.png" height="35"/>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+  </script>
+
+</head>
+<body>
+  <a class="header-link" href="http://strims.gg" target="_blank">
+    <div id=title class="page-header">
+      <h2 class="strims">
+        Strims Live
+      </h2>
+    </div>
+  </a>
+  <div class="channels">
+    <div class="live">
+    </div>
+  </div>
+</body>
+<script src="../js/app.js"></script>
+
+</html>
