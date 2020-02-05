@@ -40,8 +40,8 @@ App.prototype = {
         .replace('{thumbnail}', stream.thumbnail)
         .replace('{title}', stream.title || "Random")
         .replace('{viewers}', stream.viewers.toString().replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1,'))
-        .replace(/\{url\}/g, 'http://strims.gg' + stream.url)
-        .replace(/\{url\}/g, 'http://strims.gg' + stream.url)
+        .replace(/\{url\}/g, 'https://strims.gg' + stream.url)
+        .replace(/\{url\}/g, 'https://strims.gg' + stream.url)
         .replace('{channel}', stream.channel)
         .replace('{channel}', stream.channel)
         .replace('{service}', stream.service);

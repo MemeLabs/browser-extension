@@ -27,5 +27,5 @@
   "permissions": ["declarativeContent",
     "notifications",
     "storage",
-    "*://*.strims.gg/*"]
+    "https://strims.gg/"]
 }
