@@ -37,7 +37,7 @@
             </div>
             <div class="col-xs-1">
               <button class="ggbtn btn favbtn">
-                <img class="fav" channel="{channel}" src="/images/favorite-{favorite}.png" height="35" />
+                <img class="fav" channel="{channel}" src="/images/favorite-{favorite}.png"/>
               </button>
             </div>
             <div class="col-xs-9">
@@ -51,13 +51,22 @@
 </head>
 
 <body>
-  <a class="header-link" href="https://strims.gg" target="_blank">
-    <div id=title class="page-header">
-      <h2 class="strims">
-        Strims Live
-      </h2>
+    <div id=title class="page-header container-fluid">
+      <div class="row">
+        <div class="col-xs-10">
+          <a class="header-link" href="https://strims.gg" target="_blank">
+            <h2 class="strims">
+              Strims Live
+            </h2>
+          </a>
+        </div>
+        <div class="col-xs-2">
+          <button id="externalbutton" class="ggbtn btn ggbtn-external" data-placement="top" data-toggle="tooltip" title="Open current tab on Strims">
+            <img class="external" src="/images/external-link.png"/>
+          </button>
+        </div>
+      </div>
     </div>
-  </a>
   <div class="channels">
     <div class="live">
     </div>

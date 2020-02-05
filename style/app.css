@@ -21,7 +21,6 @@ body {
 /* Extension Header */
 h2.strims {
   color: #e45e07;
-  padding-left: 15px;
 }
 
 /* Extension divider */
@@ -106,6 +105,15 @@ button.left {
 .ggbtn > img.fav {
   /* background-color: #121212; */
   height: 15px;
+}
+.ggbtn > img.external {
+  /* background-color: #121212; */
+  height: 25px;
+  margin-top: 20px;
+}
+
+.ggbtn-external {
+  visibility: hidden;
 }
 /* #D17134 - orange */
 /* #121212 - black */

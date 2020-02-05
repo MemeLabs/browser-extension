@@ -12,6 +12,7 @@ New:
 Add favorite button
 Favorite button changes badge behavior to show you online favorite streams
 Add scrollbar css to pretty it up
+Adds button which determines if on another streaming site and will add a quick link to embed into Strims.gg
 
 # 0.0.2
 Fix bug with url generation of strim links
