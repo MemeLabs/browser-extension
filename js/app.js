@@ -8,21 +8,14 @@ var messageHandler = function(request) {
   'use strict';
   switch (request.message) {
     case 'successGetStreams':
-      console.log("App: [GET] Streams [RECEIVED].")
-      app.streams = request.streams;
-      app.showStreams();
+      console.log("App: [GET:messageHandler] Streams [RECEIVED].")
+      app.refreshStreams();
       break;
     default:
-      console.log("App: [DEFAULT] Message [RECEIVED].")
+      console.log("App: [DEFAULT:messageHandler] Message [RECEIVED].")
       break;
   }
 };
-
-function init() {
-  console.log("App: Booted.")
-  app.show();
-  chrome.runtime.onMessage.addListener(messageHandler);
-}
 
 // Copy paste javascript for share button with setTooltip
 function setTooltip(btn, message) {
@@ -56,6 +49,4 @@ $('.copy').on('click', function(e) {
   $(this).tooltip()
 });
 
-chrome.runtime.onInstalled.addListener(init);
-chrome.runtime.onStartup.addListener(init);
 chrome.runtime.onMessage.addListener(messageHandler);
