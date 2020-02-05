@@ -10,38 +10,46 @@
   <link type="text/css" rel="stylesheet" media="all" href="../style/bootstrap.min.css">
   <link type="text/css" rel="stylesheet" media="all" href="../style/app.css">
   <script type="text/html" data-template="liveChannel">
-      <div class="container container-fluid" data-name="{channel}">
-        <div class="row">
-          <a href="{url}" target="_blank">
-            <div class="col-xs-7">
-              <img class="thumbnail" src="{thumbnail}">
+    <div class="container container-fluid" data-name="{channel}">
+      <div class="row">
+        <a href="{url}" target="_blank">
+          <div class="col-xs-7">
+            <img class="thumbnail" src="{thumbnail}">
+          </div>
+        </a>
+        <div class="col-xs-5">
+          <div class="row">
+            <div class="col-xs-11">
+              <h5 class="title">{title}</h5>
             </div>
-          </a>
-          <div class="col-xs-5">
-            <div class="row">
-              <div class="col-xs-11">
-                <h5 class="title">{title}</h5>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-xs-11 channel">By {channel}</div>
-            </div>
-            <div class="row">
-              <div class="col-xs-11 viewers">Viewers: {viewers}</div>
-            </div>
-            <div class="row">
-              <button class="btn copy"
-                data-placement="bottom"
-                data-clipboard-text="{url}">
-                <img class="copy" src="/images/copy.png" height="35"/>
+          </div>
+          <div class="row">
+            <div class="col-xs-11 channel">By {channel}</div>
+          </div>
+          <div class="row">
+            <div class="col-xs-11 viewers">Viewers: {viewers}</div>
+          </div>
+          <div class="row">
+            <div class="col-xs-1 copy">
+              <button class="ggbtn btn copy" data-placement="bottom" data-clipboard-text="{url}" data-trigger="manual">
+                <img class="copy" src="/images/copy.png" />
               </button>
+            </div>
+            <div class="col-xs-1">
+              <button class="ggbtn btn favbtn">
+                <img class="fav" channel="{channel}" src="/images/favorite-{favorite}.png" height="35" />
+              </button>
+            </div>
+            <div class="col-xs-9">
             </div>
           </div>
         </div>
       </div>
+    </div>
   </script>
 
 </head>
+
 <body>
   <a class="header-link" href="https://strims.gg" target="_blank">
     <div id=title class="page-header">

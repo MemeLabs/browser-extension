@@ -24,7 +24,7 @@ Background.prototype = {
     }
 
     chrome.browserAction.setBadgeBackgroundColor({
-      color: '#333'
+      color: '#e45e07'
     });
 
     chrome.browserAction.setBadgeText({
@@ -41,6 +41,24 @@ Background.prototype = {
       streams: streams
     }, function() {
       console.log('Background: [STORAGE:saveStreams] Streams stored.');
+    });
+    chrome.storage.local.get(['favorites'], function(result) {
+      var favs = Array.isArray(result.favorites) ? result.favorites : [];
+      if(favs.length > 0) {
+        var i = 0;
+        var c = 0;
+        var stream;
+        for(i = 0; i < streams.length; i += 1) {
+          stream = streams[i];
+          if(favs.indexOf(stream.channel) > -1){
+            c++
+          }
+        }
+        if(c == 0){c = ''}
+        chrome.browserAction.setBadgeText({
+          text: c.toString()
+        });
+      }
     });
   },
 

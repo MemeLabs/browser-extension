@@ -19,18 +19,17 @@ var messageHandler = function(request) {
 
 // Copy paste javascript for share button with setTooltip
 function setTooltip(btn, message) {
-  $(btn).tooltip('hide')
-    .attr('data-original-title', message)
+  $(btn).attr('data-original-title', message)
     .tooltip('show');
 }
 
 function hideTooltip(btn) {
   setTimeout(function() {
     $(btn).tooltip('hide');
-  }, 1000);
+  }, 2000);
 }
 
-var clipboard = new ClipboardJS('.btn');
+var clipboard = new ClipboardJS('.ggbtn');
 
 clipboard.on('success', function(e) {
   setTooltip(e.trigger, 'Copied!');
@@ -41,12 +40,21 @@ clipboard.on('success', function(e) {
 clipboard.on('error', function(e) {
   setTooltip(e.trigger, 'Failed!');
   hideTooltip(e.trigger);
+  e.clearSelection();
 });
 
-$('[data-toggle="tooltip"]').tooltip();
-
-$('.copy').on('click', function(e) {
-  $(this).tooltip()
+// Toggle favorite button img from empty to full vice versa
+$(document).on('click', ".favbtn", function(e) {
+  console.log("App: [CLICK:fav-btn]");
+  var child= this.firstElementChild;
+  var src = child.src;
+  if (src.indexOf("empty") > 0) {
+    child.src = "/images/favorite-full.png";
+    app.addFavorite(child.getAttribute("channel"))
+  } else {
+    child.src = "/images/favorite-empty.png";
+    app.removeFavorite(child.getAttribute("channel"))
+  }
 });
 
 chrome.runtime.onMessage.addListener(messageHandler);
