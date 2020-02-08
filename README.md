@@ -1,6 +1,6 @@
 # strims-live-extension
 
-# 0.0.3 - Beta
+# 0.0.3
 Updated:
 Update viewer numbers to be rustlers on site
 Fix clipboard tooltip to appropriately hide until pressed again
