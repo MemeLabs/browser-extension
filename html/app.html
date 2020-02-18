@@ -10,7 +10,7 @@
   <link type="text/css" rel="stylesheet" media="all" href="../style/bootstrap.min.css">
   <link type="text/css" rel="stylesheet" media="all" href="../style/app.css">
   <script type="text/html" data-template="liveChannel">
-    <div class="container container-fluid" data-name="{channel}">
+    <div class="container container-fluid channel-container" data-name="{channel}">
       <div class="row">
         <a href="{url}" target="_blank">
           <div class="col-xs-7">
@@ -18,16 +18,15 @@
           </div>
         </a>
         <div class="col-xs-5">
-          <div class="row">
-            <div class="col-xs-11">
-              <h5 class="title">{title}</h5>
+          <a href="{url}" target="_blank">
+            <div class="row">
+              <div class="col-xs-11">
+                <h5 class="title">{title}</h5>
+              </div>
             </div>
-          </div>
+          </a>
           <div class="row">
-            <div class="col-xs-11 channel">By {channel}</div>
-          </div>
-          <div class="row">
-            <div class="col-xs-11 viewers">Viewers: {viewers}</div>
+            <div class="col-xs-11 channel">{channel} - {viewers}</div>
           </div>
           <div class="row">
             <div class="col-xs-1 copy">
@@ -45,13 +44,35 @@
           </div>
         </div>
       </div>
+      <div class="row channel-div"></div>
     </div>
   </script>
-
+  <script type="text/html" data-template="botChannel">
+    <div class="container container-fluid" data-name="{channel}">
+      <a href="{url}" target="_blank">
+        <div class="row">
+          <div class="col-xs-11">
+            <h5 class="title">{title}</h5>
+          </div>
+        </div>
+      </a>
+      <div class="row">
+        <div class="col-xs-11 channel">{channel} - {viewers}</div>
+      </div>
+    </div>
+  </script>
+  <script type="text/html" data-template="divider">
+    <div class="header container-fluid" data-name="divider">
+      <h4 class="bots">
+        AFK Strims
+      </h4>
+    </div>
+  </script>
+  <meta name="viewport" content="width=device-width" />
 </head>
 
 <body>
-    <div id=title class="page-header container-fluid">
+    <div id=title class="header container-fluid">
       <div class="row">
         <div class="col-xs-10">
           <a class="header-link" href="https://strims.gg" target="_blank">
@@ -61,14 +82,15 @@
           </a>
         </div>
         <div class="col-xs-2">
-          <button id="externalbutton" class="ggbtn btn ggbtn-external" data-placement="top" data-toggle="tooltip" title="Open current tab on Strims">
-            <img class="external" src="/images/external-link.png"/>
-          </button>
+          <img class="btn header-btn embed" src="/images/external-link.png" data-placement="top" data-toggle="tooltip" title="Open current tab on Strims"/>
         </div>
       </div>
     </div>
+    <div style="height: 10px"></div>
   <div class="channels">
     <div class="live">
+    </div>
+    <div class="bots">
     </div>
   </div>
 </body>

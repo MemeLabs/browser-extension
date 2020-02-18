@@ -2,6 +2,7 @@ var Strims = function() {
   'use strict';
   console.log("Strims: [CONSRUCT:Strims] New Strims created.");
   this.streams = [];
+  this.bot_streams = [];
 };
 
 Strims.prototype = {
@@ -10,6 +11,7 @@ Strims.prototype = {
     'use strict';
 
     this.streams = [];
+    this.bot_streams = [];
 
     var self = this;
     var limit = 100;
@@ -24,11 +26,15 @@ Strims.prototype = {
         //   setRequestHeaders(request)
         // },
         success: function(response) {
-          self.streams = response.stream_list.filter(strim => strim.service == 'angelthump');
+          self.streams = response.stream_list.filter(strim => strim.service == "angelthump" && strim.channel != "contrakino" && strim.channel != "psrngafk");
+          self.bot_streams = response.stream_list.filter(strim => strim.channel == "contrakino" || strim.channel == "psrngafk");
           self.streams.sort(function(a, b) {
             return b.viewers - a.viewers;
           });
-          getStreamsCallback(self.streams);
+          self.bot_streams.sort(function(a, b) {
+            return b.viewers - a.viewers;
+          });
+          getStreamsCallback(self.streams, self.bot_streams);
           $(document)
             .trigger('successGetStreams');
         },

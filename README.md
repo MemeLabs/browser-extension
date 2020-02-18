@@ -1,5 +1,19 @@
 # strims-live-extension
 
+# 0.0.4
+Updated:
+Fix embed icon to be more centered, and the click feature to be on the image
+Set interval for background updates to be in the main background script to hopefully resolve inactive bug where badge doesn't update
+Default font to Oxygen, then Roboto, then others
+Contrast between headers and listings (background color update)
+Contrast between streamer and title (font color update)
+Center listings within their own row
+Slight firefox scrollbar adjustment
+
+New:
+Separate out bot streams in the view to call them out, highlighting community members first
+Add divider between listings
+
 # 0.0.3
 Updated:
 Update viewer numbers to be rustlers on site

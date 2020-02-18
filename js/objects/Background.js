@@ -6,17 +6,15 @@ var Background = function() {
 
   var self = this;
 
-  setInterval(function() {
-    self.getStreams();
-  }, 120 * 1000); // Two minutes between updates.
 };
 
 Background.prototype = {
 
-  saveStreams: function(streams) {
+  saveStreams: function(streams, bot_streams) {
     'use strict';
     console.log("Background: [STORAGE:saveStreams] Streams received.");
-    if (!streams.length) {
+    var length = streams.length + bot_streams.length
+    if (!length) {
       chrome.browserAction.setBadgeText({
         text: ''
       });
@@ -28,20 +26,29 @@ Background.prototype = {
     });
 
     chrome.browserAction.setBadgeText({
-      text: streams.length.toString()
+      text: length.toString()
     });
 
     var msg = {
       message: 'successGetStreams',
-      streams: streams
+      streams: streams,
+      bot_streams: bot_streams
     }
 
     chrome.runtime.sendMessage(msg);
+    // Store community streams
     chrome.storage.local.set({
       streams: streams
     }, function() {
-      console.log('Background: [STORAGE:saveStreams] Streams stored.');
+      console.log("Background: [STORAGE:saveStreams] " + streams.length + " streams stored.");
     });
+    // Store bot streams
+    chrome.storage.local.set({
+      bot_streams: bot_streams
+    }, function() {
+      console.log("Background: [STORAGE:saveStreams] " + bot_streams.length + " bot streams stored.");
+    });
+    // Update favorites badge
     chrome.storage.local.get(['favorites'], function(result) {
       var favs = Array.isArray(result.favorites) ? result.favorites : [];
       if(favs.length > 0) {

@@ -2,6 +2,10 @@ var background = new Background();
 
 background.getStreams();
 
+setInterval(function() {
+  background.getStreams();
+}, 120 * 1000); // Two minutes between updates.
+
 var messageHandler = function (request) {
   'use strict';
   switch (request.message) {

@@ -3,7 +3,7 @@
   "name": "Strims Live",
   "short_name": "StrimsTV",
   "description": "Strims extension for displaying a user's favorite channels, what's live, and quick navigation to live streams on Strims.gg.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "background": {
     "scripts": [
       "js/libs/jquery-3.4.1.min.js",
@@ -24,9 +24,8 @@
        "128": "images/icon.png"
      }
   },
-  "permissions": ["declarativeContent",
+  "permissions": ["activeTab",
     "notifications",
-    "tabs",
     "storage",
     "https://strims.gg/"]
 }

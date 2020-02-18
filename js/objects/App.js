@@ -4,10 +4,13 @@ var App = function() {
   console.log("App: [CONSRUCT:App] New App created.");
 
   this.streams = [];
+  this.bot_streams = [];
   this.favorites = [];
 
   this.templates = {
-    liveChannel: 'liveChannel'
+    liveChannel: 'liveChannel',
+    botChannel: 'botChannel',
+    divider: 'divider'
   };
 
   var templateName;
@@ -30,11 +33,12 @@ App.prototype = {
       },
       stream,
       i,
-      streamsHTML = '';
+      streamsHTML = '',
+      botHTML = '';
 
     elements.live.find('div[data-name]').remove();
 
-    console.log("App: [RENDER:renderStreams] " + this.streams.length + " streams.");
+    console.log("App: [RENDER:renderStreams] " + this.streams.length + " streams and " + this.bot_streams.length + " bot streams.");
 
     for (i = 0; i < this.streams.length; i += 1) {
       stream = this.streams[i];
@@ -45,6 +49,7 @@ App.prototype = {
         .replace('{viewers}', stream.rustlers.toString().replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1,'))
         .replace(/\{url\}/g, 'https://strims.gg' + stream.url)
         .replace(/\{url\}/g, 'https://strims.gg' + stream.url)
+        .replace(/\{url\}/g, 'https://strims.gg' + stream.url)
         .replace('{channel}', stream.channel)
         .replace('{channel}', stream.channel)
         .replace('{channel}', stream.channel)
@@ -52,18 +57,35 @@ App.prototype = {
         .replace('{favorite}', this.favorites.indexOf(stream.channel) > -1 ? "full" : "empty");
     }
     elements.live.append(streamsHTML);
+    var listings = $('.channels').find('div[data-name]');
+    listings[listings.length-1].classList.remove("channel-container");
+    
+    if(!this.bot_streams.isEmpty) {
+      elements.live.append(this.templates.divider);
+    }
+
+    for (i = 0; i < this.bot_streams.length; i += 1) {
+      stream = this.bot_streams[i];
+      botHTML += this.templates.botChannel
+        .replace('{title}', stream.title || "Random")
+        .replace('{viewers}', stream.rustlers.toString().replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1,'))
+        .replace(/\{url\}/g, 'https://strims.gg' + stream.url)
+        .replace('{channel}', stream.channel)
+        .replace('{channel}', stream.channel);
+    }
+    elements.live.append(botHTML);
+
   },
 
   refreshStreams: function() {
     'use strict';
     var self = this;
-    chrome.storage.local.get(['streams'], function(result) {
+    chrome.storage.local.get(['streams','bot_streams'], function(result) {
       console.log("App: [GET:refreshStreams] Streams from storage.");
       if (result) {
-        self.streams = result.streams.sort(function(a, b) {
-          return b.rustlers - a.rustlers
-        });
-        console.log("App: [GET:refreshStreams] Retrieved " + self.streams.length + " streams.");
+        self.streams = result.streams;
+        self.bot_streams = result.bot_streams;
+        console.log("App: [GET:refreshStreams] Retrieved " + self.streams.length + " streams and " + self.bot_streams.length + " bot streams.");
         self.renderStreams();
       }
     });

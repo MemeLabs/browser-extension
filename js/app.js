@@ -129,11 +129,11 @@ chrome.tabs.query({
   active: true
 }, function(tabs) {
   if(valid_redirect_url(tabs[0].url)){
-    document.getElementById("externalbutton").style.visibility = "visible";
+    document.querySelector(".embed").style.visibility = "visible";
   }
 })
 
-$(document).on('click', ".ggbtn-external", function(e) {
+$(document).on('click', ".embed", function(e) {
   console.log("App: [REDIRECT:external] Redirect tab.");
   chrome.tabs.query({
     currentWindow: true,
