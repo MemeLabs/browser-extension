@@ -2,46 +2,34 @@
 <html>
 
 <head>
-  <script src="../js/libs/jquery-3.4.1.min.js"></script>
-  <script src="../js/libs/bootstrap.min.js"></script>
+  <meta charset="utf-8">
+  <script src="../js/libs/jquery-3.7.1.min.js"></script>
   <script src="../js/libs/popper.min.js"></script>
+  <script src="../js/libs/bootstrap.min.js"></script>
   <script src="../js/libs/clipboard.min.js"></script>
   <script src="../js/objects/App.js"></script>
+  <script src="../js/objects/GeneralPanel.js"></script>
+  <script src="../js/objects/LatencyPanel.js"></script>
   <link type="text/css" rel="stylesheet" media="all" href="../style/bootstrap.min.css">
   <link type="text/css" rel="stylesheet" media="all" href="../style/app.css">
   <script type="text/html" data-template="liveChannel">
     <div class="container container-fluid" data-name="{channel}">
-      <div class="row">
-        <a href="{url}" target="_blank">
-          <div class="col-xs-7">
-            <img class="thumbnail" src="{thumbnail}">
-          </div>
+      <div class="row card-row">
+        <a class="col-xs-7" href="{url}" target="_blank">
+          <img class="thumbnail" src="{thumbnail}">
         </a>
-        <div class="col-xs-5">
-          <div class="row">
-            <div class="col-xs-11">
-              <h5 class="title">{title}</h5>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-xs-11 channel">By {channel}</div>
-          </div>
-          <div class="row">
-            <div class="col-xs-11 viewers">Viewers: {viewers}</div>
-          </div>
-          <div class="row">
-            <div class="col-xs-1 copy">
-              <button class="ggbtn btn copy" data-placement="bottom" data-clipboard-text="{url}" data-trigger="manual">
-                <img class="copy" src="/images/copy.png" />
-              </button>
-            </div>
-            <div class="col-xs-1">
-              <button class="ggbtn btn favbtn">
-                <img class="fav" channel="{channel}" src="/images/favorite-{favorite}.png"/>
-              </button>
-            </div>
-            <div class="col-xs-9">
-            </div>
+        <div class="col-xs-5 card-meta">
+          <h5 class="title">{title}</h5>
+          <div class="channel">By {channel}</div>
+          <div class="viewers">Viewers: {viewers}</div>
+          <div class="icon-row">
+            <button class="ggbtn btn copy" data-placement="bottom" data-clipboard-text="{url}" data-trigger="manual">
+              <img class="copy" src="/images/copy.png" />
+            </button>
+            <button class="ggbtn btn favbtn">
+              <img class="fav" channel="{channel}" src="/images/favorite-{favorite}.png"/>
+            </button>
+            <a class="ggbtn btn alt-link" href="https://strims.gg/advanced/https://stream.batperson.com/{channel}" target="_blank" title="Pick egress server (alt)">Alt</a>
           </div>
         </div>
       </div>
@@ -53,7 +41,7 @@
 <body>
     <div id=title class="page-header container-fluid">
       <div class="row">
-        <div class="col-xs-10">
+        <div class="col-xs-8">
           <a class="header-link" href="https://strims.gg" target="_blank">
             <h2 class="strims">
               Strims Live
@@ -65,10 +53,89 @@
             <img class="external" src="/images/external-link.png"/>
           </button>
         </div>
+        <div class="col-xs-2">
+          <button id="settingsbutton" class="ggbtn btn ggbtn-settings" data-placement="top" data-toggle="tooltip" title="Settings">&#9881;</button>
+        </div>
       </div>
     </div>
   <div class="channels">
+    <div class="filter-row">
+      <button id="filterAllBtn" class="filter-btn active" type="button">All</button>
+      <button id="filterFavoritesBtn" class="filter-btn" type="button">Favorites</button>
+    </div>
+    <p id="streamsStatus" class="streams-status" hidden></p>
     <div class="live">
+    </div>
+  </div>
+
+  <div id="settingsPanel" class="settings-panel">
+    <div class="settings-header">
+      <button id="settingsback" class="ggbtn btn">&#8592;</button>
+      <h3>Settings</h3>
+    </div>
+
+    <div class="tab-strip">
+      <button id="tabGeneralBtn" class="tab-btn active" type="button">General</button>
+      <button id="tabLatencyBtn" class="tab-btn" type="button">Latency Lock</button>
+    </div>
+
+    <div id="tabGeneral" class="tab-panel">
+      <section class="about-row">
+        <span>Strims Live</span>
+        <strong id="extVersion">—</strong>
+      </section>
+
+      <div class="field">
+        <label for="refreshInterval">Refresh every</label>
+        <select id="refreshInterval">
+          <option value="1">1 minute</option>
+          <option value="2">2 minutes</option>
+          <option value="5">5 minutes</option>
+          <option value="10">10 minutes</option>
+          <option value="15">15 minutes</option>
+        </select>
+      </div>
+
+      <h4 class="section-heading">Favorites</h4>
+      <div id="favoritesList" class="favorites-list"></div>
+      <p id="favoritesEmpty" class="note">No favorites yet — tap the heart on a live channel to follow it.</p>
+
+      <a id="feedbackLink" class="feedback-link" href="https://github.com/nom-d-plume/strims-live-extension/issues/new" target="_blank" title="Share feedback or request a feature on GitHub. Opens in a new tab — requires a GitHub account.">Feedback &amp; feature requests</a>
+    </div>
+
+    <div id="tabLatency" class="tab-panel" hidden>
+      <label class="toggle-row">
+        <span>Enabled</span>
+        <input id="llEnabled" type="checkbox" />
+      </label>
+
+      <div class="field delay-field">
+        <label for="llTargetSeconds">Locked delay (AngelThump)</label>
+        <div class="delay-controls">
+          <input id="llTargetRange" type="range" min="9" max="60" step="0.5" aria-label="Locked delay slider" />
+          <div class="delay-number">
+            <input id="llTargetSeconds" type="number" min="9" max="60" step="0.5" inputmode="decimal" aria-label="Locked delay in seconds" />
+            <span>s</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button id="llReconnect" type="button">Reconnect</button>
+        <button id="llRebuild" type="button">Rebuild reserve</button>
+      </div>
+
+      <section class="telemetry" aria-label="Player status">
+        <div><span>State</span><strong id="llState">Locating AngelThump tab…</strong></div>
+        <div><span>Attached tab</span><strong id="llAttachedTab">—</strong></div>
+        <div><span>Effective delay</span><strong id="llEffectiveTarget">—</strong></div>
+        <div><span>Actual latency</span><strong id="llActualLatency">—</strong></div>
+        <div><span>Forward buffer</span><strong id="llForwardBuffer">—</strong></div>
+        <div><span>Blocked jumps</span><strong id="llPreventedJumps">0</strong></div>
+        <div><span>Recoveries</span><strong id="llRecoveryCount">0</strong></div>
+      </section>
+
+      <p id="llStatus" role="status"></p>
     </div>
   </div>
 </body>

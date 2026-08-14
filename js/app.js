@@ -1,8 +1,51 @@
 /*globals $, chrome, Popup */
 /*jslint browser: true */
 var app = new App();
+var generalPanel = new GeneralPanel(app);
+var latencyPanel = new LatencyPanel();
 
 app.show();
+
+// Toggle between the channel list and the settings panel
+$(document).on('click', '#settingsbutton', function() {
+  $('.channels').hide();
+  $('#settingsPanel').show();
+  switchTab('general');
+});
+
+$(document).on('click', '#settingsback', function() {
+  $('#settingsPanel').hide();
+  $('.channels').show();
+  latencyPanel.stopPolling();
+});
+
+// Settings sub-tabs
+function switchTab(tab) {
+  var isGeneral = tab === 'general';
+  $('#tabGeneralBtn').toggleClass('active', isGeneral);
+  $('#tabLatencyBtn').toggleClass('active', !isGeneral);
+  $('#tabGeneral').prop('hidden', !isGeneral);
+  $('#tabLatency').prop('hidden', isGeneral);
+
+  if (isGeneral) {
+    latencyPanel.stopPolling();
+    generalPanel.open();
+  } else {
+    latencyPanel.open();
+  }
+}
+
+$(document).on('click', '#tabGeneralBtn', function() { switchTab('general'); });
+$(document).on('click', '#tabLatencyBtn', function() { switchTab('latency'); });
+
+$(document).on('click', '#retryStreams', function() {
+  app.showLoading();
+  chrome.runtime.sendMessage({ message: 'getStreams' });
+});
+
+// All / Favorites filter
+$(document).on('click', '#filterAllBtn', function() { app.setFilter('all'); });
+$(document).on('click', '#filterFavoritesBtn', function() { app.setFilter('favorites'); });
 
 var messageHandler = function(request) {
   'use strict';
@@ -10,6 +53,10 @@ var messageHandler = function(request) {
     case 'successGetStreams':
       console.log("App: [GET:messageHandler] Streams [RECEIVED].")
       app.refreshStreams();
+      break;
+    case 'errorGetStreams':
+      console.log("App: [ERROR:messageHandler] Streams fetch failed.")
+      app.showError();
       break;
     default:
       console.log("App: [DEFAULT:messageHandler] Message [RECEIVED].")
@@ -90,13 +137,6 @@ function redirect(tabs) {
       url: `https://strims.gg/youtube-playlist/${link}`
     })
   }
-  // Mixer
-  else if (URL.includes('mixer.com') === true && URL != "https://mixer.com/") {
-    var username = URL.substr(URL.lastIndexOf('/') + 1)
-    chrome.tabs.update(current_tab.id, {
-      url: `https://strims.gg/mixer/${username}`
-    })
-  }
 };
 
 function valid_redirect_url(URL) {
@@ -114,10 +154,6 @@ function valid_redirect_url(URL) {
   }
   // Youtube Playlist
   else if (URL.includes('youtube.com') === true && URL.includes('&list=') === true) {
-    return true;
-  }
-  // Mixer
-  else if (URL.includes('mixer.com') === true && URL != "https://mixer.com/") {
     return true;
   }
   return false;

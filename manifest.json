@@ -1,32 +1,51 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Strims Live",
   "short_name": "StrimsTV",
-  "description": "Strims extension for displaying a user's favorite channels, what's live, and quick navigation to live streams on Strims.gg.",
-  "version": "0.0.3",
+  "description": "Strims extension for displaying a user's favorite channels, what's live, quick navigation to live streams on Strims.gg, and an AngelThump playback latency lock.",
+  "version": "0.1.0",
   "background": {
-    "scripts": [
-      "js/libs/jquery-3.4.1.min.js",
-      "js/objects/Background.js",
-      "js/objects/Strims.js",
-      "js/objects/App.js",
-      "js/background.js"
-    ],
-    "persistent": false
+    "service_worker": "js/background.js",
+    "scripts": ["js/objects/Strims.js", "js/objects/Background.js", "js/objects/LatencyLock.js", "js/background.js"]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "strims-live@nom-d-plume.dev",
+      "strict_min_version": "128.0"
+    }
   },
   "icons": {
     "128": "images/icon.png"
   },
-  "browser_action": {
-    "default_title" : "Strims",
+  "action": {
+    "default_title": "Strims",
     "default_popup": "html/app.html",
-     "default_icon": {
-       "128": "images/icon.png"
-     }
+    "default_icon": {
+      "128": "images/icon.png"
+    }
   },
-  "permissions": ["declarativeContent",
-    "notifications",
-    "tabs",
-    "storage",
-    "https://strims.gg/"]
+  "permissions": ["storage", "tabs", "scripting", "notifications"],
+  "host_permissions": [
+    "https://strims.gg/*",
+    "https://angelthump.com/*",
+    "https://www.angelthump.com/*",
+    "https://*.angelthump.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://angelthump.com/*", "https://www.angelthump.com/*", "https://*.angelthump.com/*"],
+      "js": ["js/latency/bridge.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    },
+    {
+      "matches": ["https://angelthump.com/*", "https://www.angelthump.com/*", "https://*.angelthump.com/*"],
+      "js": ["js/latency/page.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ]
 }
