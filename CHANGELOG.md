@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.2 — Firefox background-script crash fix
+- Fixed a bug where `ImgurResolver.js` was loaded on Chrome (via `background.js`'s `importScripts()`) but missing from `manifest.json`'s Firefox `background.scripts` array, causing `new ImgurResolver()` to throw `ReferenceError` and crash the entire Firefox background script before it could register its message listener — breaking stream fetching, the update check, and chat image previews on Firefox
+
 ## 0.1.1 — update check, chat image previews, header polish
 - Added an update check against GitHub Releases (background alarm, twice a day + on startup) — an orange "Update" chip appears in the popup header when a newer tagged version exists, linking through to the release
 - Added chat image hover-preview on `chat.strims.gg` — direct image links, single-image `imgur.com/<id>` pages, and `imgur.com/a/`\|`/gallery/` albums (resolved via Open Graph metadata) all show a floating preview on hover; toggleable in Settings → General
