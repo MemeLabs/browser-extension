@@ -53,11 +53,21 @@ There's no build step for development — all dependencies (jQuery, Bootstrap, P
 
 ### Firefox
 
+**Quick test (temporary — gets removed on restart):**
+
 1. Open `about:debugging#/runtime/this-firefox`
 2. Click **Load Temporary Add-on…**
 3. Select `manifest.json` inside the extension folder
 
-**Important caveat**: this loads the extension *temporarily* — Firefox removes it when you close the browser, and you'll need to repeat these steps next launch. Stock Firefox only permits unsigned extensions to be loaded this way; a **permanent** install requires the extension to be signed by Mozilla (via [addons.mozilla.org](https://addons.mozilla.org), even for self-distribution outside their store), which hasn't been done for this release yet. If you want a permanent Firefox install without going through AMO signing, you'd need Firefox Developer Edition, Nightly, or ESR with `xpinstall.signatures.required` disabled in `about:config` — not recommended unless you know what that flag does.
+Firefox removes it as soon as you close the browser, and you'll need to repeat these steps next launch. This is fine for a quick look, not for regular use.
+
+**Permanent install (survives restarts):**
+
+Stock/release Firefox hard-locks extension signature enforcement — no setting will get an unsigned extension to persist there. A permanent install needs either the extension to be signed by Mozilla (via [addons.mozilla.org](https://addons.mozilla.org), even for self-distribution outside their store — not done for this release yet), or a Firefox channel that allows disabling signature enforcement:
+
+1. **Check your channel first**: open `about:support` → "Application Basics" → look at the **Name** field. Only **Firefox Developer Edition**, **Firefox Nightly**, and **Firefox ESR** can disable signature enforcement — regular "Firefox" and "Firefox Beta" cannot, no matter what you set below. If you're on regular Firefox, install [Firefox Developer Edition](https://www.mozilla.org/en-US/firefox/developer/) alongside it — it's a separate application with its own profile, it won't touch or replace your existing Firefox install.
+2. In that channel, open `about:config`, search for `xpinstall.signatures.required`, and set it to `false`. Restart the browser.
+3. Go to `about:addons` → gear icon (⚙) → **"Install Add-on From File..."** → select the packaged `.zip` (see [Packaging a release](#packaging-a-release) below, or grab it from a GitHub Release). **Note:** `about:debugging`'s "Load Temporary Add-on" is *always* temporary regardless of this setting — you must install via `about:addons` to get a persistent install.
 
 ## Packaging a release
 
