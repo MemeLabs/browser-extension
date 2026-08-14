@@ -6,12 +6,29 @@ var latencyPanel = new LatencyPanel();
 
 app.show();
 
-// Toggle between the channel list and the settings panel
-$(document).on('click', '#settingsbutton', function() {
+// Show a header chip when an update is available.
+function refreshUpdateIndicators() {
+  chrome.storage.local.get({ updateInfo: null }, function(result) {
+    var available = !!(result.updateInfo && result.updateInfo.updateAvailable);
+    document.getElementById('updateChip').hidden = !available;
+  });
+}
+
+refreshUpdateIndicators();
+
+chrome.storage.onChanged.addListener(function(changes, area) {
+  if (area === 'local' && changes.updateInfo) refreshUpdateIndicators();
+});
+
+function openSettings() {
   $('.channels').hide();
   $('#settingsPanel').show();
   switchTab('general');
-});
+}
+
+// Toggle between the channel list and the settings panel
+$(document).on('click', '#settingsbutton', openSettings);
+$(document).on('click', '#updateChip', openSettings);
 
 $(document).on('click', '#settingsback', function() {
   $('#settingsPanel').hide();
@@ -165,11 +182,11 @@ chrome.tabs.query({
   active: true
 }, function(tabs) {
   if(valid_redirect_url(tabs[0].url)){
-    document.getElementById("externalbutton").style.visibility = "visible";
+    document.getElementById("externalbutton").hidden = false;
   }
 })
 
-$(document).on('click', ".ggbtn-external", function(e) {
+$(document).on('click', "#externalbutton", function(e) {
   console.log("App: [REDIRECT:external] Redirect tab.");
   chrome.tabs.query({
     currentWindow: true,

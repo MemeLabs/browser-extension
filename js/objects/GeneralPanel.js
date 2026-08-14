@@ -7,8 +7,28 @@ var GeneralPanel = function(app) {
   var emptyEl = document.getElementById('favoritesEmpty');
   var versionEl = document.getElementById('extVersion');
   var refreshIntervalEl = document.getElementById('refreshInterval');
+  var chatImagePreviewEl = document.getElementById('chatImagePreviewEnabled');
 
-  versionEl.textContent = 'v' + chrome.runtime.getManifest().version;
+  var currentVersion = chrome.runtime.getManifest().version;
+  versionEl.textContent = 'v' + currentVersion;
+
+  function renderUpdateInfo(info) {
+    if (info && info.updateAvailable) {
+      versionEl.textContent = 'Out of date (v' + currentVersion + ')';
+      versionEl.href = info.releaseUrl;
+      versionEl.classList.add('update-available');
+    } else {
+      versionEl.textContent = info && info.checkedAt ? 'Up to date (v' + currentVersion + ')' : 'v' + currentVersion;
+      versionEl.removeAttribute('href');
+      versionEl.classList.remove('update-available');
+    }
+  }
+
+  function loadUpdateInfo() {
+    chrome.storage.local.get({ updateInfo: null }, function(result) {
+      renderUpdateInfo(result.updateInfo);
+    });
+  }
 
   refreshIntervalEl.addEventListener('change', function() {
     chrome.storage.sync.set({ refreshIntervalMinutes: Number(refreshIntervalEl.value) });
@@ -17,6 +37,16 @@ var GeneralPanel = function(app) {
   function loadRefreshInterval() {
     chrome.storage.sync.get({ refreshIntervalMinutes: 2 }, function(result) {
       refreshIntervalEl.value = String(result.refreshIntervalMinutes);
+    });
+  }
+
+  chatImagePreviewEl.addEventListener('change', function() {
+    chrome.storage.sync.set({ chatImagePreviewEnabled: chatImagePreviewEl.checked });
+  });
+
+  function loadChatImagePreview() {
+    chrome.storage.sync.get({ chatImagePreviewEnabled: true }, function(result) {
+      chatImagePreviewEl.checked = result.chatImagePreviewEnabled;
     });
   }
 
@@ -84,6 +114,8 @@ var GeneralPanel = function(app) {
 
   this.open = function() {
     loadRefreshInterval();
+    loadChatImagePreview();
+    loadUpdateInfo();
     render();
   };
 };

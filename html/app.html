@@ -48,14 +48,11 @@
             </h2>
           </a>
         </div>
-        <div class="col-xs-2">
-          <button id="externalbutton" class="ggbtn btn ggbtn-external" data-placement="top" data-toggle="tooltip" title="Open current tab on Strims">
-            <img class="external" src="/images/external-link.png"/>
-          </button>
-        </div>
-        <div class="col-xs-2">
-          <button id="settingsbutton" class="ggbtn btn ggbtn-settings" data-placement="top" data-toggle="tooltip" title="Settings">&#9881;</button>
-        </div>
+        <button id="settingsbutton" class="ggbtn btn ggbtn-settings" data-placement="top" data-toggle="tooltip" title="Settings">&#9881;</button>
+      </div>
+      <div class="header-chip-row">
+        <button id="externalbutton" type="button" class="update-chip" title="Open current tab on Strims" hidden>Open on Strims</button>
+        <button id="updateChip" type="button" class="update-chip" title="An update is available — click to view" hidden>Update</button>
       </div>
     </div>
   <div class="channels">
@@ -82,7 +79,7 @@
     <div id="tabGeneral" class="tab-panel">
       <section class="about-row">
         <span>Strims Live</span>
-        <strong id="extVersion">—</strong>
+        <a id="extVersion" class="version-status" target="_blank" rel="noopener">—</a>
       </section>
 
       <div class="field">
@@ -95,6 +92,11 @@
           <option value="15">15 minutes</option>
         </select>
       </div>
+
+      <label class="toggle-row">
+        <span>Preview image links on hover in chat</span>
+        <input id="chatImagePreviewEnabled" type="checkbox" />
+      </label>
 
       <h4 class="section-heading">Favorites</h4>
       <div id="favoritesList" class="favorites-list"></div>

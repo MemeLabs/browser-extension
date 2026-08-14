@@ -3,10 +3,10 @@
   "name": "Strims Live",
   "short_name": "StrimsTV",
   "description": "Strims extension for displaying a user's favorite channels, what's live, quick navigation to live streams on Strims.gg, and an AngelThump playback latency lock.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "background": {
     "service_worker": "js/background.js",
-    "scripts": ["js/objects/Strims.js", "js/objects/Background.js", "js/objects/LatencyLock.js", "js/background.js"]
+    "scripts": ["js/objects/Strims.js", "js/objects/Background.js", "js/objects/LatencyLock.js", "js/objects/UpdateChecker.js", "js/background.js"]
   },
   "browser_specific_settings": {
     "gecko": {
@@ -24,12 +24,14 @@
       "128": "images/icon.png"
     }
   },
-  "permissions": ["storage", "tabs", "scripting", "notifications"],
+  "permissions": ["storage", "tabs", "scripting", "notifications", "alarms"],
   "host_permissions": [
     "https://strims.gg/*",
     "https://angelthump.com/*",
     "https://www.angelthump.com/*",
-    "https://*.angelthump.com/*"
+    "https://*.angelthump.com/*",
+    "https://api.github.com/*",
+    "https://imgur.com/*"
   ],
   "content_scripts": [
     {
@@ -46,6 +48,12 @@
       "world": "MAIN",
       "all_frames": true,
       "match_about_blank": true
+    },
+    {
+      "matches": ["https://chat.strims.gg/*"],
+      "js": ["js/chat-preview/preview.js"],
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ]
 }
