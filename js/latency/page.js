@@ -21,7 +21,16 @@
   const CONTROL_INTERVAL_MS = 150;
   const DISCOVERY_INTERVAL_MS = 750;
   const STATUS_INTERVAL_MS = 1000;
-  const TARGET_TOLERANCE_SECONDS = 1.0;
+  // The buffer is a shock absorber: latency drifting within this band around
+  // the target is expected and left alone so it can silently refill/drain as
+  // delivery jitter comes and goes. Corrections only kick in once that band
+  // is left (or the safety net in handlePlaybackStarvation fires). Both
+  // sides scale with the configured target so a bigger requested buffer gets
+  // proportionally more room to absorb jitter, instead of a fixed-second
+  // band that's way too tight at a small target and way too loose at a large
+  // one.
+  const LOW_TOLERANCE_RATIO = 0.5;
+  const HIGH_TOLERANCE_RATIO = 1.0;
   const JUMP_THRESHOLD_SECONDS = 1.25;
   const MAX_RESERVE_BUILD_SECONDS = 55;
   const STARVED_BUFFER_SECONDS = 0.35;
@@ -441,6 +450,14 @@
       : requested;
   }
 
+  function getLowTolerance(targetSeconds) {
+    return targetSeconds * LOW_TOLERANCE_RATIO;
+  }
+
+  function getHighTolerance(targetSeconds) {
+    return targetSeconds * HIGH_TOLERANCE_RATIO;
+  }
+
   function getAdaptiveReserveRequirements(state, target) {
     const targetDuration = getPlaylistTargetDuration(state);
     const requiredForwardBuffer = Math.min(
@@ -660,9 +677,9 @@
       return;
     }
 
-    if (latency < targetSeconds - TARGET_TOLERANCE_SECONDS) {
+    if (latency < targetSeconds - getLowTolerance(targetSeconds)) {
       correctTooClose(state, "player moved too close to live", targetSeconds);
-    } else if (latency > targetSeconds + 8) {
+    } else if (latency > targetSeconds + getHighTolerance(targetSeconds)) {
       const resolved = resolveTargetPosition(state, targetSeconds, true);
       if (resolved) {
         performInternalSeek(state, resolved.position);
@@ -700,7 +717,7 @@
     if (
       jump <= JUMP_THRESHOLD_SECONDS ||
       !Number.isFinite(currentLatency) ||
-      currentLatency >= targetSeconds - TARGET_TOLERANCE_SECONDS
+      currentLatency >= targetSeconds - getLowTolerance(targetSeconds)
     ) {
       return;
     }
@@ -925,7 +942,7 @@
     const targetSeconds = getControlTarget(state);
     const edge = estimateLiveEdge(state);
     const latency = Number.isFinite(edge) ? edge - video.currentTime : null;
-    if (Number.isFinite(latency) && latency >= targetSeconds - TARGET_TOLERANCE_SECONDS) {
+    if (Number.isFinite(latency) && latency >= targetSeconds - getLowTolerance(targetSeconds)) {
       state.lastSafeTime = video.currentTime;
       state.lastReason = "reserve already available";
       return;

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4 — latency lock: widen correction band to stop false-positive stutter
+- Latency Lock was snap-seeking (an instant `video.currentTime` jump, felt as a stutter/replay of the last 1-2s) whenever latency drifted more than a flat 1 second below target — which is well within normal playback jitter, not an actual problem. Confirmed live against a stuttering AngelThump stream: with a 10s target, this fired roughly every 30-90 seconds even though the buffer itself never came close to starving.
+- Replaced the flat 1s low-side and flat +8s high-side correction thresholds with a band that scales with the configured target (50% below, 100% above) instead of fixed seconds, so the buffer can actually act as a shock absorber — silently draining/refilling within that band — rather than snapping the instant it's ~1s off target. A bigger requested buffer now gets proportionally more absorption room instead of the same tight fixed band regardless of target.
+- Re-verified against the same live stream with the extension loaded for two 8-minute sessions: before the fix, ~10 snap-seeks in 8 minutes; after, zero corrections fired and latency locked cleanly the whole session.
+
 ## 0.1.3 — Build Buffer button + latency lock recovery hardening
 - Added a "Build Buffer" chip to the popup header (next to Open on Strims/Update) that triggers a Latency Lock reserve rebuild without opening Settings first — visible only when Latency Lock is enabled and an angelthump.com/strims.gg tab is open, and shows "Building Buffer…" until the rebuild completes
 - Latency Lock now recognizes any fatal hls.js network error (previously only `manifestLoadError`) — including `levelLoadError`/CORS-blocked CDN edge hosts, which could previously spam the console forever with no recovery. Recovery stays buffer-driven: playback keeps running off whatever is buffered while a quiet, throttled reload retry happens in the background, only escalating to a frame-scoped reload (not a full page refresh) once playback actually starves
