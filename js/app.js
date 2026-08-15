@@ -20,6 +20,85 @@ chrome.storage.onChanged.addListener(function(changes, area) {
   if (area === 'local' && changes.updateInfo) refreshUpdateIndicators();
 });
 
+// Show a header chip to rebuild the latency lock buffer without opening settings.
+function isLatencyRelevantUrl(url) {
+  try {
+    var parsed = new URL(url);
+    return parsed.protocol === 'https:' &&
+      (parsed.hostname === 'angelthump.com' ||
+        parsed.hostname.endsWith('.angelthump.com') ||
+        parsed.hostname === 'strims.gg' ||
+        parsed.hostname.endsWith('.strims.gg'));
+  } catch (_error) {
+    return false;
+  }
+}
+
+function refreshBuildBufferChip() {
+  chrome.storage.sync.get({ enabled: true }, function(settings) {
+    if (!settings.enabled) {
+      document.getElementById('buildBufferChip').hidden = true;
+      return;
+    }
+    chrome.tabs.query({ currentWindow: true }, function(tabs) {
+      var relevant = tabs.some(function(tab) { return isLatencyRelevantUrl(tab.url); });
+      document.getElementById('buildBufferChip').hidden = !relevant;
+    });
+  });
+}
+
+refreshBuildBufferChip();
+
+chrome.storage.onChanged.addListener(function(changes, area) {
+  if (area === 'sync' && changes.enabled) refreshBuildBufferChip();
+});
+
+var BUILD_BUFFER_POLL_MS = 500;
+var BUILD_BUFFER_TIMEOUT_MS = 20000;
+
+function watchBufferBuild($btn, tabId) {
+  var start = Date.now();
+
+  function finish() {
+    $btn.prop('disabled', false).text('Build Buffer');
+  }
+
+  function poll() {
+    if (Date.now() - start > BUILD_BUFFER_TIMEOUT_MS) {
+      finish();
+      return;
+    }
+    chrome.runtime.sendMessage({ type: 'atll-get-tab-status', tabId: tabId }).then(function(response) {
+      var status = response && response.status;
+      var fresh = status && Date.now() - Number(status.receivedAt) < 6000;
+      if (fresh && status.detected && !status.holding) {
+        finish();
+        return;
+      }
+      setTimeout(poll, BUILD_BUFFER_POLL_MS);
+    }).catch(function() {
+      setTimeout(poll, BUILD_BUFFER_POLL_MS);
+    });
+  }
+
+  setTimeout(poll, BUILD_BUFFER_POLL_MS);
+}
+
+$(document).on('click', '#buildBufferChip', function() {
+  var $btn = $(this);
+  $btn.prop('disabled', true).text('Building Buffer…');
+  chrome.tabs.query({ currentWindow: true }, function(tabs) {
+    var relevant = tabs.find(function(tab) { return isLatencyRelevantUrl(tab.url); });
+    chrome.storage.sync.set({ rebuildNonce: Date.now() }).then(function() {
+      if (relevant && Number.isInteger(relevant.id)) {
+        watchBufferBuild($btn, relevant.id);
+      } else {
+        setTimeout(function() { $btn.prop('disabled', false).text('Build Buffer'); }, 800);
+      }
+    });
+  });
+});
+
 function openSettings() {
   $('.channels').hide();
   $('#settingsPanel').show();

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3 — Build Buffer button + latency lock recovery hardening
+- Added a "Build Buffer" chip to the popup header (next to Open on Strims/Update) that triggers a Latency Lock reserve rebuild without opening Settings first — visible only when Latency Lock is enabled and an angelthump.com/strims.gg tab is open, and shows "Building Buffer…" until the rebuild completes
+- Latency Lock now recognizes any fatal hls.js network error (previously only `manifestLoadError`) — including `levelLoadError`/CORS-blocked CDN edge hosts, which could previously spam the console forever with no recovery. Recovery stays buffer-driven: playback keeps running off whatever is buffered while a quiet, throttled reload retry happens in the background, only escalating to a frame-scoped reload (not a full page refresh) once playback actually starves
+- Raised the minimum safety-reserve floor used to decide when a buffer rebuild is "done" (from 4s to 5s) so low Latency Lock targets (e.g. 10s, near the 9s minimum) keep enough margin above a typical 2-3s network recovery instead of nearly none
+- Added diagnostic `console.warn` logging around forward-jump detection/undo and reserve-rebuild triggers in the Latency Lock content script, to make future playback issues easier to diagnose from the browser console
+
 ## 0.1.2 — Firefox background-script crash fix
 - Fixed a bug where `ImgurResolver.js` was loaded on Chrome (via `background.js`'s `importScripts()`) but missing from `manifest.json`'s Firefox `background.scripts` array, causing `new ImgurResolver()` to throw `ReferenceError` and crash the entire Firefox background script before it could register its message listener — breaking stream fetching, the update check, and chat image previews on Firefox
 

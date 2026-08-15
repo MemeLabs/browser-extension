@@ -33,6 +33,9 @@
   const MEDIA_EDGE_PROGRESS_SECONDS = 0.2;
   const RESERVE_BUFFER_GROWTH_SECONDS = 0.25;
   const RESERVE_STALL_MIN_MS = 6000;
+  const FATAL_ERROR_WINDOW_MS = 8000;
+  const FATAL_ERROR_RESTART_THROTTLE_MS = 2000;
+  const RECOVERY_MARGIN_SECONDS = 5;
   const TARGET_TRACKING_INTERVAL_SECONDS = 1.0;
   const SEEK_MARGIN_SECONDS = 0.2;
 
@@ -190,6 +193,8 @@
       lastMediaProgressAt: performance.now(),
       frameReloadTimer: null,
       lastFatalManifestErrorAt: null,
+      fatalNetworkErrorCount: 0,
+      fatalNetworkErrorWindowStart: 0,
       lastJump: null,
       lastReason: "video detected; waiting for media",
       everPlayed: !video.paused,
@@ -303,7 +308,7 @@
     const constructor = hls.constructor || {};
     const events = constructor.Events || {};
     const errorTypes = constructor.ErrorTypes || {};
-    const errorDetails = constructor.ErrorDetails || {};
+    let lastQuietRestartAt = 0;
 
     const levelUpdatedEvent = events.LEVEL_UPDATED || "hlsLevelUpdated";
     const fragBufferedEvent = events.FRAG_BUFFERED || "hlsFragBuffered";
@@ -340,22 +345,51 @@
       const fatal = Boolean(data && data.fatal);
       const type = data && data.type;
       const details = data && data.details;
-      const manifestLoadError =
-        details === "manifestLoadError" ||
-        (errorDetails.MANIFEST_LOAD_ERROR !== undefined &&
-          details === errorDetails.MANIFEST_LOAD_ERROR);
       const networkError =
         type === "networkError" ||
         type === errorTypes.NETWORK_ERROR;
 
-      if (!fatal || !networkError || !manifestLoadError) return;
+      // Any fatal network-layer failure (manifest, level, or fragment load errors,
+      // including CORS-blocked CDN edge hosts) means hls.js gave up loading the
+      // current playlist/level on its own. We don't reload immediately -- the
+      // video keeps playing off whatever is still buffered. We just mark the
+      // playlist stale so handlePlaybackStarvation's existing buffer-aware
+      // recovery ladder (soft HLS restart, then frame reload only once playback
+      // actually starves) kicks in instead of hls.js retrying the same broken
+      // host forever with no visible recovery.
+      if (!fatal || !networkError) return;
       const media = hls.media;
       if (!(media instanceof HTMLMediaElement)) return;
       const video = videoState.get(media);
       if (!video) return;
+
       video.lastFatalManifestErrorAt = performance.now();
       video.lastWaitingAt = performance.now();
-      video.lastReason = "fatal manifest load error; recovery pending";
+      video.lastReason = `fatal ${details || "network"} error; recovery pending`;
+      console.warn(
+        LOG_PREFIX,
+        `Fatal HLS network error (${details || "unknown"}) at ${data && data.url}; ` +
+          `forwardBuffer ${formatOne(getForwardBuffer(video.video))}s, will recover once buffer starves.`,
+      );
+
+      const now = performance.now();
+      if (now - video.fatalNetworkErrorWindowStart > FATAL_ERROR_WINDOW_MS) {
+        video.fatalNetworkErrorWindowStart = now;
+        video.fatalNetworkErrorCount = 0;
+      }
+      video.fatalNetworkErrorCount += 1;
+
+      // Quietly nudge hls.js to retry loading without touching playback or the
+      // paused/holding state. This is throttled so a burst of repeated errors
+      // (as seen when a CDN host is fully unreachable) doesn't spam retries.
+      if (now - lastQuietRestartAt > FATAL_ERROR_RESTART_THROTTLE_MS) {
+        lastQuietRestartAt = now;
+        try {
+          hls.startLoad(video.holding ? video.video.currentTime : -1);
+        } catch (_error) {
+          // Ignore a destroyed/replaced Hls instance.
+        }
+      }
     };
 
     hls.on(levelUpdatedEvent, onLevelUpdated);
@@ -413,9 +447,14 @@
       Math.max(3, target - 1),
       Math.max(7.5, targetDuration * 2),
     );
+    // Recovering from a network hiccup (soft HLS restart, CDN retry) takes
+    // roughly 2-3s in practice. Never let the reserve be considered "good
+    // enough" with less than RECOVERY_MARGIN_SECONDS of runway above that, even
+    // at low configured targets with short segment durations -- otherwise a
+    // routine stall can outrun the buffer before recovery finishes.
     const minimumForwardBuffer = Math.min(
       requiredForwardBuffer,
-      Math.max(4, targetDuration * 1.25),
+      Math.max(RECOVERY_MARGIN_SECONDS, targetDuration * 1.25),
     );
     return {
       targetDuration,
@@ -686,6 +725,18 @@
       state.preventedJumps += 1;
       state.lastJump = { from, to: target, at: Date.now(), latency: currentLatency };
       state.lastReason = "blocked automatic forward resync";
+      console.warn(
+        LOG_PREFIX,
+        `Forward jump undone: from ${formatOne(from)}s to ${formatOne(target)}s ` +
+          `(jump ${formatOne(jump)}s, latency ${formatOne(currentLatency)}s, forwardBuffer ${formatOne(getForwardBuffer(video))}s).`,
+      );
+    } else {
+      console.warn(
+        LOG_PREFIX,
+        `Forward jump detected but could not be undone: from ${formatOne(from)}s ` +
+          `(jump ${formatOne(jump)}s, latency ${formatOne(currentLatency)}s, ` +
+          `buffered ranges ${describeRanges(video.buffered)}, seekable ranges ${describeRanges(video.seekable)}).`,
+      );
     }
   }
 
@@ -705,6 +756,12 @@
       return;
     }
 
+    console.warn(
+      LOG_PREFIX,
+      `correctTooClose could not find a safe position (reason: ${reason}); ` +
+        `falling back to a full reserve rebuild. forwardBuffer was ${formatOne(getForwardBuffer(state.video))}s, ` +
+        `buffered ranges ${describeRanges(state.video.buffered)}, seekable ranges ${describeRanges(state.video.seekable)}.`,
+    );
     beginReserveBuild(state, reason);
   }
 
@@ -894,7 +951,13 @@
     }
 
     if (!video.paused) video.pause();
-    console.info(LOG_PREFIX, `Holding playback to build a real ${targetSeconds}s reserve.`);
+    console.warn(
+      LOG_PREFIX,
+      `Holding playback to build a real ${targetSeconds}s reserve (reason: ${reason}). ` +
+        `forwardBuffer dropping from ${formatOne(state.reserveBestForwardBuffer)}s, ` +
+        `anchor ${formatOne(state.holdAnchor)}s, ` +
+        `buffered ranges ${describeRanges(video.buffered)}.`,
+    );
   }
 
   function continueReserveBuild(state) {
@@ -1305,6 +1368,19 @@
 
   function formatOne(value) {
     return Number.isFinite(Number(value)) ? Number(value).toFixed(1) : "?";
+  }
+
+  function describeRanges(ranges) {
+    if (!ranges || ranges.length === 0) return "none";
+    const parts = [];
+    for (let index = 0; index < ranges.length; index += 1) {
+      try {
+        parts.push(`[${formatOne(ranges.start(index))}-${formatOne(ranges.end(index))}]`);
+      } catch (_error) {
+        parts.push("[?]");
+      }
+    }
+    return parts.join(" ");
   }
 
   function queueScan() {
