@@ -74,6 +74,14 @@
         status: event.data.status,
       });
     }
+
+    if (event.data.type === "stall-notify") {
+      sendRuntimeMessage({
+        type: "atll-stall",
+        frameUrl: location.href,
+        reason: event.data.reason,
+      });
+    }
   });
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

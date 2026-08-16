@@ -3,7 +3,7 @@
   "name": "Strims Live",
   "short_name": "StrimsTV",
   "description": "Strims extension for displaying a user's favorite channels, what's live, quick navigation to live streams on Strims.gg, and an AngelThump playback latency lock.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "background": {
     "service_worker": "js/background.js",
     "scripts": ["js/objects/Strims.js", "js/objects/Background.js", "js/objects/LatencyLock.js", "js/objects/UpdateChecker.js", "js/objects/ImgurResolver.js", "js/background.js"]
@@ -43,7 +43,7 @@
     },
     {
       "matches": ["https://angelthump.com/*", "https://www.angelthump.com/*", "https://*.angelthump.com/*"],
-      "js": ["js/latency/page.js"],
+      "js": ["js/latency/recovery-logic.js", "js/latency/page.js"],
       "run_at": "document_start",
       "world": "MAIN",
       "all_frames": true,

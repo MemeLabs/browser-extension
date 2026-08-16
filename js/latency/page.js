@@ -10,7 +10,12 @@
   const PAGE_SOURCE = "angelthump-buffer-stabilizer-page";
   const BRIDGE_SOURCE = "angelthump-buffer-stabilizer-bridge";
   const LOG_PREFIX = "[AngelThump Latency Lock]";
-  const VERSION = "2.3.3";
+  const VERSION = "2.3.5";
+
+  // Pure recovery decision logic lives in recovery-logic.js (loaded before this
+  // script, same MAIN world) so it can be unit tested without a DOM. See
+  // docs/latency-lock-recovery.md.
+  const RecoveryLogic = window.AngelThumpRecoveryLogic;
 
   const DEFAULT_CONFIG = Object.freeze({
     enabled: true,
@@ -29,7 +34,6 @@
   // proportionally more room to absorb jitter, instead of a fixed-second
   // band that's way too tight at a small target and way too loose at a large
   // one.
-  const LOW_TOLERANCE_RATIO = 0.5;
   const HIGH_TOLERANCE_RATIO = 1.0;
   const JUMP_THRESHOLD_SECONDS = 1.25;
   const MAX_RESERVE_BUILD_SECONDS = 55;
@@ -43,10 +47,11 @@
   const RESERVE_BUFFER_GROWTH_SECONDS = 0.25;
   const RESERVE_STALL_MIN_MS = 6000;
   const FATAL_ERROR_WINDOW_MS = 8000;
-  const FATAL_ERROR_RESTART_THROTTLE_MS = 2000;
-  const RECOVERY_MARGIN_SECONDS = 5;
   const TARGET_TRACKING_INTERVAL_SECONDS = 1.0;
   const SEEK_MARGIN_SECONDS = 0.2;
+
+  const STALL_NOTIFICATION_THROTTLE_MS = 60000;
+  let lastStallNotificationAt = 0;
 
   let config = null;
   let observer = null;
@@ -318,6 +323,7 @@
     const events = constructor.Events || {};
     const errorTypes = constructor.ErrorTypes || {};
     let lastQuietRestartAt = 0;
+    let quietRestartDelay = RecoveryLogic.FATAL_ERROR_RESTART_MIN_DELAY_MS;
 
     const levelUpdatedEvent = events.LEVEL_UPDATED || "hlsLevelUpdated";
     const fragBufferedEvent = events.FRAG_BUFFERED || "hlsFragBuffered";
@@ -385,14 +391,18 @@
       if (now - video.fatalNetworkErrorWindowStart > FATAL_ERROR_WINDOW_MS) {
         video.fatalNetworkErrorWindowStart = now;
         video.fatalNetworkErrorCount = 0;
+        quietRestartDelay = RecoveryLogic.FATAL_ERROR_RESTART_MIN_DELAY_MS;
       }
       video.fatalNetworkErrorCount += 1;
 
       // Quietly nudge hls.js to retry loading without touching playback or the
-      // paused/holding state. This is throttled so a burst of repeated errors
-      // (as seen when a CDN host is fully unreachable) doesn't spam retries.
-      if (now - lastQuietRestartAt > FATAL_ERROR_RESTART_THROTTLE_MS) {
+      // paused/holding state. Backs off 2s -> 4s -> 8s (capped) so a host that's
+      // unreachable for a while (e.g. DNS failure) still gets retried regularly
+      // instead of either spamming retries or, at the other extreme, going
+      // quiet for minutes.
+      if (now - lastQuietRestartAt > quietRestartDelay) {
         lastQuietRestartAt = now;
+        quietRestartDelay = RecoveryLogic.nextQuietRestartDelay(quietRestartDelay);
         try {
           hls.startLoad(video.holding ? video.video.currentTime : -1);
         } catch (_error) {
@@ -451,7 +461,7 @@
   }
 
   function getLowTolerance(targetSeconds) {
-    return targetSeconds * LOW_TOLERANCE_RATIO;
+    return RecoveryLogic.getLowTolerance(targetSeconds);
   }
 
   function getHighTolerance(targetSeconds) {
@@ -460,23 +470,11 @@
 
   function getAdaptiveReserveRequirements(state, target) {
     const targetDuration = getPlaylistTargetDuration(state);
-    const requiredForwardBuffer = Math.min(
-      Math.max(3, target - 1),
-      Math.max(7.5, targetDuration * 2),
-    );
-    // Recovering from a network hiccup (soft HLS restart, CDN retry) takes
-    // roughly 2-3s in practice. Never let the reserve be considered "good
-    // enough" with less than RECOVERY_MARGIN_SECONDS of runway above that, even
-    // at low configured targets with short segment durations -- otherwise a
-    // routine stall can outrun the buffer before recovery finishes.
-    const minimumForwardBuffer = Math.min(
-      requiredForwardBuffer,
-      Math.max(RECOVERY_MARGIN_SECONDS, targetDuration * 1.25),
-    );
+    const requirements = RecoveryLogic.getAdaptiveReserveRequirements(target, targetDuration);
     return {
       targetDuration,
-      requiredForwardBuffer,
-      minimumForwardBuffer,
+      requiredForwardBuffer: requirements.requiredForwardBuffer,
+      minimumForwardBuffer: requirements.minimumForwardBuffer,
       stalledGrowthMs: Math.max(RESERVE_STALL_MIN_MS, targetDuration * 2500),
     };
   }
@@ -870,10 +868,30 @@
       return;
     }
 
+    // A full navigation is what actually recovers from a stuck DNS/socket-layer
+    // failure (the same thing a manual page refresh does) -- unlike the quiet
+    // hls.startLoad() retries above, which just repeat the same failing request
+    // inside the same broken network context. So this keeps reloading on a
+    // steady cadence (paced naturally by FRAME_RECOVERY_DELAY_MS, roughly every
+    // ~10s) rather than giving up after a handful of attempts and leaving the
+    // viewer stuck for minutes with no way to recover short of a manual refresh.
+    // The budget check below never blocks the reload (reloadBudgetIsAdvisoryOnly
+    // is always true) -- it only decides whether to log that the budget was
+    // exceeded. The reload itself always proceeds; see the function's comment
+    // in recovery-logic.js for why.
     const history = readFrameReloadHistory();
-    if (history.length >= MAX_FRAME_RELOADS_PER_WINDOW) {
-      state.lastReason = "stream still stalled; automatic player reload limit reached";
-      return;
+    if (history.length >= MAX_FRAME_RELOADS_PER_WINDOW && RecoveryLogic.reloadBudgetIsAdvisoryOnly()) {
+      console.warn(
+        LOG_PREFIX,
+        `Reload budget (${MAX_FRAME_RELOADS_PER_WINDOW} per ${FRAME_RELOAD_WINDOW_MS / 1000}s) ` +
+          `exceeded but stream is still stalled; reloading anyway.`,
+      );
+    }
+
+    const now = Date.now();
+    if (now - lastStallNotificationAt > STALL_NOTIFICATION_THROTTLE_MS) {
+      lastStallNotificationAt = now;
+      window.postMessage({ source: PAGE_SOURCE, type: "stall-notify", reason }, "*");
     }
 
     state.lastReason = `${reason}; reloading player frame`;
@@ -942,7 +960,20 @@
     const targetSeconds = getControlTarget(state);
     const edge = estimateLiveEdge(state);
     const latency = Number.isFinite(edge) ? edge - video.currentTime : null;
-    if (Number.isFinite(latency) && latency >= targetSeconds - getLowTolerance(targetSeconds)) {
+    // Sitting at the target latency only means the playhead is positioned
+    // correctly relative to the live edge -- it says nothing about how much of
+    // that gap is actually downloaded and sitting in the buffer. isReserveReady
+    // requires both, so a thin real buffer (e.g. right after a seek/restart,
+    // before the CDN has handed over more segments) doesn't get waved through
+    // as "fine" and starve within a second or two of any real network hiccup
+    // instead of surviving the full target window.
+    const reserveReady = RecoveryLogic.isReserveReady(
+      latency,
+      getForwardBuffer(video),
+      targetSeconds,
+      getPlaylistTargetDuration(state),
+    );
+    if (reserveReady) {
       state.lastSafeTime = video.currentTime;
       state.lastReason = "reserve already available";
       return;

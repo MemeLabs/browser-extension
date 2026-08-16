@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5 — latency lock recovery hardening + optional stall notifications
+- Extracted Latency Lock's recovery decision logic (low-tolerance band, adaptive reserve requirements, quiet-restart backoff, reserve-readiness check) into a standalone, unit-tested module (`js/latency/recovery-logic.js`, tests in `test/recovery-logic.test.js`)
+- Reserve-readiness now also checks actual forward-buffered seconds, not just latency vs. target — a thin real buffer right after a seek/restart no longer gets waved through as "fine" and starving within a second or two of the next network hiccup
+- Quiet hls.js reload retries on fatal network errors now back off (2s → 4s → 8s, capped) instead of a fixed 2s throttle, so a host that's unreachable for a while still gets retried regularly without spamming
+- The frame-reload budget is now advisory/logging-only rather than a hard stop — a stuck DNS/socket-layer failure only clears via a full navigation, so Latency Lock keeps reloading on a steady cadence instead of leaving the viewer stuck after a handful of attempts
+- Added an opt-in desktop notification when a stall triggers a player-frame reload, off by default (enable for a debugging session via `chrome.storage.local.set({ atllStallDebug: true })` in the extension's background console)
+
 ## 0.1.4 — latency lock: widen correction band to stop false-positive stutter
 - Latency Lock was snap-seeking (an instant `video.currentTime` jump, felt as a stutter/replay of the last 1-2s) whenever latency drifted more than a flat 1 second below target — which is well within normal playback jitter, not an actual problem. Confirmed live against a stuttering AngelThump stream: with a 10s target, this fired roughly every 30-90 seconds even though the buffer itself never came close to starving.
 - Replaced the flat 1s low-side and flat +8s high-side correction thresholds with a band that scales with the configured target (50% below, 100% above) instead of fixed seconds, so the buffer can actually act as a shock absorber — silently draining/refilling within that band — rather than snapping the instant it's ~1s off target. A bigger requested buffer now gets proportionally more absorption room instead of the same tight fixed band regardless of target.

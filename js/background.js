@@ -28,8 +28,46 @@ background.getStreams();
 updateChecker.startPeriodicChecks();
 updateChecker.check();
 
+var lastStallNotificationCreatedAt = 0;
+
+// Off by default in every build (dev and released alike) -- there's no
+// store/sideload distinction to key off since this ships as a zip handed
+// directly to users either way. Enable it yourself for a debugging session by
+// running this in the extension's background console (chrome://extensions ->
+// "Inspect views: service worker", or about:debugging for Firefox):
+//   chrome.storage.local.set({ atllStallDebug: true })
+// and disable again with atllStallDebug: false (or just reload the extension,
+// since storage.local isn't touched by anything else here).
+var stallDebugEnabled = false;
+chrome.storage.local.get({ atllStallDebug: false }, function(result) {
+  stallDebugEnabled = Boolean(result.atllStallDebug);
+});
+chrome.storage.onChanged.addListener(function(changes, area) {
+  if (area === 'local' && changes.atllStallDebug) {
+    stallDebugEnabled = Boolean(changes.atllStallDebug.newValue);
+  }
+});
+
 var messageHandler = function (request, sender, sendResponse) {
   'use strict';
+  if (request.type === 'atll-stall') {
+    if (!stallDebugEnabled) return;
+    // Notifications are already throttled per-frame in page.js; this is a
+    // second belt-and-suspenders throttle in case multiple frames/tabs report
+    // stalls close together.
+    var now = Date.now();
+    if (now - lastStallNotificationCreatedAt > 30000) {
+      lastStallNotificationCreatedAt = now;
+      chrome.notifications.create('atll-stall:' + now, {
+        type: 'basic',
+        iconUrl: 'images/icon.png',
+        title: 'Stream player stalled',
+        message: 'AngelThump Latency Lock is auto-recovering: ' + (request.reason || 'playback stalled') + '.',
+        priority: 1
+      });
+    }
+    return;
+  }
   switch (request.message) {
     case 'getStreams':
       console.log("Background: Getting Streams...");
